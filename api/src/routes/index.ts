@@ -10,9 +10,12 @@ router.get(
   paginate(Promotion),
   promotionController.getPromotions
 );
-
-router.post('/promotions/mock-data', promotionController.addMockData);
+router.post('/promotions/mock-data', promotionController.addMockPromotions);
 router.put('/promotions/:id', promotionController.updatePromotionByID);
 router.delete('/promotions/:id', promotionController.deletePromotionByID);
+router.post(
+  '/promotions/duplicate/:id',
+  promotionController.duplicatePromotionByID
+);
 
 export { router as promotionRouter };

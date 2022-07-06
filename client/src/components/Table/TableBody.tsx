@@ -1,55 +1,91 @@
-import { useState, useCallback, Dispatch, SetStateAction } from 'react';
-import useHttp from '../../hooks/use-http';
-import { Promotion } from '../../types/promotion';
+import { useRef, useCallback, Fragment } from 'react';
 import Dropdown from './TableDropdownActions';
+import { Promotion } from '../../types/promotion';
+import { useInfiniteQuery } from 'react-query';
+import moonactive from "../../api/moonactive";
 
 interface Props {
-  rows: Promotion[],
   path: string,
-  setRows: Dispatch<SetStateAction<Promotion[]>>
 }
 
-const TableBody = ({ rows, path, setRows }: Props) => {
-  const [rowId, setRowId] = useState<string>('')
+const TableBody = ({ path }: Props) => {
 
-  // Create Mock Data
-  const { sendRequest: remove, errors: removeErrors, loading: removeLoading } = useHttp({
-    url: `${path}/${rowId}`,
-    method: 'DELETE',
-    onSuccess: () => setRowId('')
-  });
+  const fetchInfiniteData = async ({ pageParam = 1 }) => {
+    const response = await moonactive.request({
+      url: path,
+      method: 'GET',
+      params: { cursor: pageParam }
+    });
+    return response.data;
+  }
 
-  const setAction = useCallback((action: string, id: string) => {
-    setRowId(id);
-    switch (action) {
-      case 'update':
-        console.log('update');
-        break;
-      case 'duplicate':
-        console.log('duplicate');
-        break;
-      case 'remove':
-        remove()
-        break;
+  // TODO: add hasPreviousPage
+  const {
+    data,
+    error,
+    hasNextPage,
+    isLoading,
+    isError,
+    fetchNextPage,
+  } = useInfiniteQuery('promotion', fetchInfiniteData, {
+    getNextPageParam: (lastPage, pages) => lastPage.nextPage,
+    getPreviousPageParam: (firstPage, allPages) => firstPage.previousPage,
+  })
+
+  const observer = useRef<IntersectionObserver | undefined>();
+  const lastItemRef = useCallback((node: HTMLTableRowElement) => {
+    if (isLoading) return;
+    if (observer.current) {
+      observer.current.disconnect();
     }
-  }, [remove]);
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasNextPage) {
+        fetchNextPage();
+      }
+    });
+
+    if (node) {
+      observer.current.observe(node)
+    };
+  }, [isLoading, hasNextPage, fetchNextPage]);
+
+
+  if (isLoading) {
+    return <tbody><tr><td className='p-3 text-sm text-gray-700'>Loading...</td></tr></tbody>
+  }
+
+  if (isError && error) {
+    return <tbody><tr><td className='p-3 text-sm text-gray-700'>Error...</td></tr></tbody>
+  }
 
   const serializeRows = () => {
-    return rows.map((promotion: Promotion, i) => (
-      <tr key={promotion.id} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-        <td className='p-3 text-sm text-gray-700'>{promotion.name}</td>
-        <td className='p-3 text-sm text-gray-700'>{promotion.type}</td>
-        <td className='p-3 text-sm text-gray-700'>{promotion.start_date}</td>
-        <td className='p-3 text-sm text-gray-700'>{promotion.end_date}</td>
-        <td className='p-3 text-sm text-gray-700'>{promotion.user_group}</td>
-        <td className='p-3 text-sm text-gray-700'>
-          <Dropdown doOperation={setAction} id={promotion.id} />
-        </td>
-      </tr>
+    return data?.pages.map((group, i: number) => (
+      <Fragment key={i}>
+        {
+          group.results.map((item: Promotion, i: number) => {
+            const refProp: React.Attributes | {} = group.results.length === i + 1 ? { ref: lastItemRef } : {};
+            return ((
+              <tr key={item.id} {...refProp} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                <td className='p-3 text-sm text-gray-700'>{item.name}</td>
+                <td className='p-3 text-sm text-gray-700'>{item.type}</td>
+                <td className='p-3 text-sm text-gray-700'>{item.start_date}</td>
+                <td className='p-3 text-sm text-gray-700'>{item.end_date}</td>
+                <td className='p-3 text-sm text-gray-700'>{item.user_group}</td>
+                <td className='p-3 text-sm text-gray-700'>
+                  <Dropdown id={item.id} path={path} />
+                </td>
+              </tr>
+            ))
+          })
+        }
+      </Fragment>
     ))
+
   }
 
   return <tbody>{serializeRows()}</tbody>;
+
+
 
 }
 export default TableBody;
