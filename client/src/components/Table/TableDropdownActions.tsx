@@ -6,18 +6,15 @@ import moonactive from "../../api/moonactive";
 
 interface Props {
   id: string,
-  path: string
+  path: string,
+  setEdit: any
 }
 
 const classNames = (...classes: string[]): string => classes.filter(Boolean).join(' ');
 
-const TableDropdownActions = ({ id, path }: Props) => {
+const TableDropdownActions = ({ id, path, setEdit }: Props) => {
 
   const queryClient = useQueryClient();
-
-  const update = (id: string) => {
-    console.log(id);
-  }
 
   const { mutate: duplicate } = useMutation(async (id: string) => {
     return await moonactive.request({
@@ -63,7 +60,7 @@ const TableDropdownActions = ({ id, path }: Props) => {
             <Menu.Item as="div">
               {({ active }) => (
                 <div
-                  onClick={() => update(id)}
+                  onClick={() => setEdit(id)}
                   className={classNames(
                     active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                     'block px-4 py-2 text-sm cursor-pointer'

@@ -1,5 +1,6 @@
-import { useRef, useCallback, Fragment } from 'react';
-import Dropdown from './TableDropdownActions';
+import { useState, useRef, useCallback, Fragment } from 'react';
+import ReadOnlyRow from './ReadOnlyRow';
+import EditableRow from './EditableRow';
 import { Promotion } from '../../types/promotion';
 import { useInfiniteQuery } from 'react-query';
 import moonactive from "../../api/moonactive";
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const TableBody = ({ path }: Props) => {
+  const [editRowId, setEditRowId] = useState<string | null>(null);
 
   const fetchInfiniteData = async ({ pageParam = 1 }) => {
     const response = await moonactive.request({
@@ -19,15 +21,15 @@ const TableBody = ({ path }: Props) => {
     return response.data;
   }
 
-  // TODO: add hasPreviousPage
+  // TODO: add hasPreviousPage + error
   const {
     data,
-    error,
     hasNextPage,
     isLoading,
     isError,
     fetchNextPage,
   } = useInfiniteQuery('promotion', fetchInfiniteData, {
+    refetchOnWindowFocus: false,
     getNextPageParam: (lastPage, pages) => lastPage.nextPage,
     getPreviousPageParam: (firstPage, allPages) => firstPage.previousPage,
   })
@@ -49,43 +51,51 @@ const TableBody = ({ path }: Props) => {
     };
   }, [isLoading, hasNextPage, fetchNextPage]);
 
-
-  if (isLoading) {
-    return <tbody><tr><td className='p-3 text-sm text-gray-700'>Loading...</td></tr></tbody>
-  }
-
-  if (isError && error) {
-    return <tbody><tr><td className='p-3 text-sm text-gray-700'>Error...</td></tr></tbody>
-  }
-
   const serializeRows = () => {
     return data?.pages.map((group, i: number) => (
       <Fragment key={i}>
         {
           group.results.map((item: Promotion, i: number) => {
-            const refProp: React.Attributes | {} = group.results.length === i + 1 ? { ref: lastItemRef } : {};
-            return ((
-              <tr key={item.id} {...refProp} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                <td className='p-3 text-sm text-gray-700'>{item.name}</td>
-                <td className='p-3 text-sm text-gray-700'>{item.type}</td>
-                <td className='p-3 text-sm text-gray-700'>{item.start_date}</td>
-                <td className='p-3 text-sm text-gray-700'>{item.end_date}</td>
-                <td className='p-3 text-sm text-gray-700'>{item.user_group}</td>
-                <td className='p-3 text-sm text-gray-700'>
-                  <Dropdown id={item.id} path={path} />
-                </td>
-              </tr>
-            ))
+            const lastRefProp: React.Attributes | {} = group.results.length === i + 1 ? { ref: lastItemRef } : {};
+            return (
+              <Fragment key={i}>
+                {editRowId === item.id
+                  ? <EditableRow
+                    index={i}
+                    path={path}
+                    item={item}
+                    setEdit={setEditRowId}
+                  />
+                  : <ReadOnlyRow
+                    index={i}
+                    path={path}
+                    item={item}
+                    lastRefProp={lastRefProp}
+                    setEdit={setEditRowId}
+                  />
+                }
+              </Fragment>
+            )
           })
         }
       </Fragment>
     ))
-
   }
 
-  return <tbody>{serializeRows()}</tbody>;
-
-
-
+  return (
+    <tbody>
+      {isLoading ? (
+        <tr>
+          <td className='p-3 text-sm text-white'>Loading...</td>
+        </tr>
+      ) : isError ? (
+        <tr>
+          <td className='p-3 text-sm text-red-900'>Error...</td>
+        </tr>
+      ) : serializeRows()
+      }
+    </tbody>
+  );
 }
+
 export default TableBody;

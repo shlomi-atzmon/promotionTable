@@ -4,6 +4,8 @@ import { NotFoundError } from '../errors/not-found-error';
 import PromotionAttrs from '../types/promotion-attrs';
 import { PromotionType } from '../Enums/promotion-type';
 
+// TODO: Fix error handling with try catch and next function
+
 // Get all promotions
 const getPromotions = async (req: Request, res: Response) => {
   res.send(res.paginatedResults);
@@ -19,16 +21,15 @@ const createPromotions = async () => {
   const start_date = new Date();
   const end_date = new Date(start_date.setMonth(start_date.getMonth() + 3));
 
-  // TODO: consider a get req for paginated results and than push
   const totalDocuments = await Promotion.countDocuments().exec();
 
-  // TODO: Add random PromotionType
   // TODO: Switch to i < 10000
   const promotions: PromotionAttrs[] = [];
-  for (let i = totalDocuments; i < totalDocuments + 4; i++) {
+  for (let i = totalDocuments; i < totalDocuments + 20; i++) {
+    const keys = Object.keys(PromotionType);
     promotions.push({
       name: `New promotion ${i + 1}`,
-      type: PromotionType.Epic,
+      type: keys[Math.floor(Math.random() * keys.length)],
       start_date,
       end_date,
       user_group: `group ${i + 1}`,
@@ -38,30 +39,28 @@ const createPromotions = async () => {
   return promotions;
 };
 
-// Edit by ID
+// Update by ID
 const updatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
-  // TODO: How to handle next error from controller
   if (!promotion) {
-    // throw new NotFoundError('promotion');
+    throw new NotFoundError('promotion');
   }
 
-  const { name } = req.body;
+  const updatePromotion: PromotionAttrs = req.body;
 
-  /* promotion.set({ name });
-  await promotion.save(); */
+  promotion.set(updatePromotion);
+  await promotion.save();
 
-  res.send({ promotion });
+  res.send(promotion);
 };
 
 // Delete by ID
 const deletePromotionByID = async (req: Request, res: Response) => {
   const result = await Promotion.deleteOne({ _id: req.params.id });
 
-  // TODO: FIX ERROR
   if (!result.deletedCount) {
-    console.log('error');
+    throw new NotFoundError('promotion');
   }
 
   return res.status(204).send();
@@ -71,7 +70,6 @@ const deletePromotionByID = async (req: Request, res: Response) => {
 const duplicatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
-  // TODO: How to handle next error from controller
   if (!promotion) {
     throw new NotFoundError('promotion');
   }
