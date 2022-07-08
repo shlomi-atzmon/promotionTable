@@ -2,8 +2,9 @@ import { SaveIcon, XIcon } from '@heroicons/react/solid';
 import { PromotionTypes } from '../../types/promotion';
 import { Promotion } from '../../types/promotion';
 import { useMutation, useQueryClient } from 'react-query';
-import DialogBox from '../Modals/DialogBox';
 import moonactive from '../../api/moonactive';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { useState } from 'react';
 
 interface Props {
@@ -21,24 +22,36 @@ const EditableRow = ({ index, path, item, setEdit }: Props) => {
     setItemData({ ...itemData, [element.name]: element.value });
   }
 
-  const { mutate: update, isError, error } = useMutation(async (id: string) => {
+  const { mutate: update } = useMutation(async (id: string) => {
     return await moonactive.request({
       url: `${path}/${id}`,
       data: itemData,
       method: 'PUT',
     });
   }, {
-    // TODO: HOW TO RETURN ONLY MESSAGE
-    onError: (error: any) => { },
+    onError: (error: any) => {
+      toast.error((
+        <div>{
+          error.response.data.messages.map((err: any) => (
+            <li className="p-1" key={err}>{err}</li>
+          ))}
+        </div>
+      ), {
+        position: toast.POSITION.TOP_LEFT
+      });
+    },
     onSuccess: () => {
       setEdit(null);
+      toast.success('Update successfully', {
+        position: toast.POSITION.TOP_LEFT,
+        autoClose: 1200
+      });
       queryClient.invalidateQueries('promotion');
     }
   })
 
   return (
     <>
-      {isError && <tr><td><DialogBox title="Error..." body={error.response.data.errors.message} /></td></tr>}
       <tr className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
         <td className='p-3 text-sm text-gray-700'>
           <input

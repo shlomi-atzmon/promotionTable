@@ -2,8 +2,9 @@ import { useState, useRef, useCallback, Fragment } from 'react';
 import ReadOnlyRow from './ReadOnlyRow';
 import EditableRow from './EditableRow';
 import { Promotion } from '../../types/promotion';
-import { useInfiniteQuery } from 'react-query';
+import { useQuery } from 'react-query';
 import moonactive from "../../api/moonactive";
+import { useScrollDirection, ScrollDirection } from '../../hooks/useScrollDirection';
 
 interface Props {
   path: string,
@@ -11,75 +12,108 @@ interface Props {
 
 const TableBody = ({ path }: Props) => {
   const [editRowId, setEditRowId] = useState<string | null>(null);
+  const [page, setPage] = useState<number>(1);
+  const direction = useScrollDirection();
 
-  const fetchInfiniteData = async ({ pageParam = 1 }) => {
+  const fetchData = async (page: number) => {
     const response = await moonactive.request({
       url: path,
       method: 'GET',
-      params: { cursor: pageParam }
+      params: { cursor: page }
     });
     return response.data;
   }
 
-  // TODO: add hasPreviousPage + error
+
+  /* 
+    if (page > 1) {
+       const length = data.results.length;
+       const oldRows = data.slice(length / 2, length);
+       console.log(oldRows);
+       const newRows = response.data.concat(oldRows);
+       console.log(newRows);
+      }
+      
+  */
+
+  // TODO: handle errors
   const {
-    data,
-    hasNextPage,
     isLoading,
     isError,
-    fetchNextPage,
-  } = useInfiniteQuery('promotion', fetchInfiniteData, {
-    refetchOnWindowFocus: false,
-    getNextPageParam: (lastPage, pages) => lastPage.nextPage,
-    getPreviousPageParam: (firstPage, allPages) => firstPage.previousPage,
-  })
+    data,
+  } = useQuery(['promotion', page], () => fetchData(page), {
+    keepPreviousData: true,
+    refetchOnWindowFocus: false
+  });
 
-  const observer = useRef<IntersectionObserver | undefined>();
-  const lastItemRef = useCallback((node: HTMLTableRowElement) => {
+  // Observer first item of a page
+  const firstItemObserver = useRef<IntersectionObserver | undefined>();
+  const firstItemRef = useCallback((node: HTMLTableRowElement) => {
     if (isLoading) return;
-    if (observer.current) {
-      observer.current.disconnect();
-    }
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasNextPage) {
-        fetchNextPage();
+    if (firstItemObserver?.current && direction === ScrollDirection.Up) {
+      firstItemObserver.current.disconnect();
+    };
+
+    firstItemObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && data.previousPage) {
+        console.log('first item');
+        setPage(data.previousPage);
       }
     });
 
     if (node) {
-      observer.current.observe(node)
+      firstItemObserver.current.observe(node)
     };
-  }, [isLoading, hasNextPage, fetchNextPage]);
+  }, [isLoading, direction]);
+
+
+  // Observer last item of a page
+  const lastItemObserver = useRef<IntersectionObserver | undefined>();
+  const lastItemRef = useCallback((node: HTMLTableRowElement) => {
+    if (isLoading) return;
+    if (lastItemObserver.current) {
+      lastItemObserver.current.disconnect();
+    }
+    lastItemObserver.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && data.nextPage) {
+        setPage(data.nextPage);
+        console.log('last item');
+      }
+    });
+
+    if (node) {
+      lastItemObserver.current.observe(node);
+    };
+  }, [isLoading]);
 
   const serializeRows = () => {
-    return data?.pages.map((group, i: number) => (
-      <Fragment key={i}>
-        {
-          group.results.map((item: Promotion, i: number) => {
-            const lastRefProp: React.Attributes | {} = group.results.length === i + 1 ? { ref: lastItemRef } : {};
-            return (
-              <Fragment key={i}>
-                {editRowId === item.id
-                  ? <EditableRow
-                    index={i}
-                    path={path}
-                    item={item}
-                    setEdit={setEditRowId}
-                  />
-                  : <ReadOnlyRow
-                    index={i}
-                    path={path}
-                    item={item}
-                    lastRefProp={lastRefProp}
-                    setEdit={setEditRowId}
-                  />
-                }
-              </Fragment>
-            )
-          })
-        }
-      </Fragment>
-    ))
+    return data.results.map((item: Promotion, i: number) => {
+      const refProp: React.Attributes | {} = data.results.length === i + 1
+        ? { ref: lastItemRef }
+        : i === 0
+          ? { ref: firstItemRef }
+          : {}
+
+      return (
+        <Fragment key={i}>
+          {editRowId === item.id
+            ? <EditableRow
+              index={i}
+              path={path}
+              item={item}
+              setEdit={setEditRowId}
+            />
+            : <ReadOnlyRow
+              index={i}
+              path={path}
+              item={item}
+              refProp={refProp}
+              setEdit={setEditRowId}
+            />
+          }
+        </Fragment>
+      )
+    })
   }
 
   return (

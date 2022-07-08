@@ -6,7 +6,7 @@ const TableHeader = () => {
   });
 
   return (
-    <thead className="bg-gray-50 border-b-2 border-gray-200">
+    <thead className="sticky top-0 z-50 bg-gray-50 border-b-2 border-gray-200">
       <tr>
         {setHeaders}
         <th className="p-3 text-sm font-semibold tracking-wide text-left">Actions</th>

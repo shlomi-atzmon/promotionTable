@@ -5,13 +5,13 @@ interface Props {
   index: number,
   path: string,
   item: Promotion,
-  lastRefProp: {} | React.Attributes,
+  refProp: {} | React.Attributes,
   setEdit: React.Dispatch<React.SetStateAction<string | null>>
 }
 
-const ReadOnlyRow = ({ index, path, item, lastRefProp, setEdit }: Props) => {
+const ReadOnlyRow = ({ index, path, item, refProp, setEdit }: Props) => {
   return ((
-    <tr key={item.id} {...lastRefProp} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+    <tr key={item.id} {...refProp} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
       <td className='p-3 text-sm text-gray-700'>{item.name}</td>
       <td className='p-3 text-sm text-gray-700'>{item.type}</td>
       <td className='p-3 text-sm text-gray-700'>{item.start_date}</td>

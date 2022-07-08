@@ -22,9 +22,7 @@ const TableDropdownActions = ({ id, path, setEdit }: Props) => {
       method: 'POST',
     });
   }, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('promotion');
-    }
+    onSuccess: () => queryClient.invalidateQueries('promotion')
   })
 
   const { mutate: remove } = useMutation(async (id: string) => {
@@ -33,9 +31,7 @@ const TableDropdownActions = ({ id, path, setEdit }: Props) => {
       method: 'DELETE',
     });
   }, {
-    onSuccess: () => {
-      queryClient.invalidateQueries('promotion');
-    }
+    onSuccess: () => queryClient.invalidateQueries('promotion')
   })
 
   return (

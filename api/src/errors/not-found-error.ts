@@ -11,7 +11,7 @@ export class NotFoundError extends CustomError {
 
   serializeErrors() {
     return {
-      message: `The requested resource ${this.entity} could not be found`,
+      messages: [`The requested resource ${this.entity} could not be found`],
     };
   }
 }

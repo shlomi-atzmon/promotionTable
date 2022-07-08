@@ -1,50 +1,26 @@
 import { Request, Response } from 'express';
-import { Promotion } from '../models/Promotion';
-import { NotFoundError } from '../errors/not-found-error';
+import { BadRequestError } from '../errors/bad-request-error';
 import PromotionAttrs from '../types/promotion-attrs';
-import { PromotionType } from '../Enums/promotion-type';
-
-// TODO: Fix error handling with try catch and next function
+import { Promotion } from '../models/Promotion';
+import { generatePromotions } from '../utils/mock-generator';
 
 // Get all promotions
 const getPromotions = async (req: Request, res: Response) => {
   res.send(res.paginatedResults);
 };
 
-// Add 10,000 rows of data
+// Generate 10,000 rows of data
 const addMockPromotions = async (req: Request, res: Response) => {
-  const response = await Promotion.massInsert(await createPromotions());
+  const response = await Promotion.massInsert(await generatePromotions());
   return res.status(201).send();
 };
 
-const createPromotions = async () => {
-  const start_date = new Date();
-  const end_date = new Date(start_date.setMonth(start_date.getMonth() + 3));
-
-  const totalDocuments = await Promotion.countDocuments().exec();
-
-  // TODO: Switch to i < 10000
-  const promotions: PromotionAttrs[] = [];
-  for (let i = totalDocuments; i < totalDocuments + 20; i++) {
-    const keys = Object.keys(PromotionType);
-    promotions.push({
-      name: `New promotion ${i + 1}`,
-      type: keys[Math.floor(Math.random() * keys.length)],
-      start_date,
-      end_date,
-      user_group: `group ${i + 1}`,
-    });
-  }
-
-  return promotions;
-};
-
-// Update by ID
+// Update
 const updatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
   if (!promotion) {
-    throw new NotFoundError('promotion');
+    throw new BadRequestError('Invalid request');
   }
 
   const updatePromotion: PromotionAttrs = req.body;
@@ -55,12 +31,12 @@ const updatePromotionByID = async (req: Request, res: Response) => {
   res.send(promotion);
 };
 
-// Delete by ID
+// Delete
 const deletePromotionByID = async (req: Request, res: Response) => {
   const result = await Promotion.deleteOne({ _id: req.params.id });
 
   if (!result.deletedCount) {
-    throw new NotFoundError('promotion');
+    throw new BadRequestError('Invalid request');
   }
 
   return res.status(204).send();
@@ -71,7 +47,7 @@ const duplicatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
   if (!promotion) {
-    throw new NotFoundError('promotion');
+    throw new BadRequestError('Invalid request');
   }
 
   const newPromotion = Promotion.build({
