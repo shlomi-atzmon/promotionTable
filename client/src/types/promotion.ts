@@ -6,3 +6,13 @@ export interface Promotion {
   end_date: string;
   user_group: string;
 }
+
+export const PromotionHeaders = [
+  'Promotion name',
+  'Type',
+  'Start Date',
+  'End Date',
+  'User Group Name',
+];
+
+export const PromotionTypes = ['Basic', 'Common', 'Epic'];

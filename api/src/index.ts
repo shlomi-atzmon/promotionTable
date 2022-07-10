@@ -1,3 +1,4 @@
+import { DatabaseConnectionError } from './errors/database-connection-error';
 import mongoose from 'mongoose';
 import app from './app';
 
@@ -13,10 +14,9 @@ const initiateApp = async () => {
         pass: 'FO8uTx2nOwjebahl',
       }
     );
-    console.log('Connected to MongoDb');
+    console.log('Promotion service is connected to MongoDB');
   } catch (err) {
-    // TODO: Add a custom error
-    console.log(err);
+    throw new DatabaseConnectionError();
   }
 
   app.listen(5000, () => {

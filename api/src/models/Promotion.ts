@@ -3,6 +3,7 @@ import PromotionAttrs from '../types/promotion-attrs';
 
 // Describes the properties that a Promotion Model has
 interface PromotionModel extends Model<PromotionDoc> {
+  build(attrs: PromotionAttrs): PromotionDoc;
   massInsert(attrs: PromotionAttrs[]): PromotionDoc[];
 }
 
@@ -36,6 +37,12 @@ const promotionSchema = new Schema(
     },
   }
 );
+
+// Get TS involved in the process of create new promotion
+// To create promotion call the Promotion.build() function
+promotionSchema.statics.build = (attrs: PromotionAttrs) => {
+  return new Promotion(attrs);
+};
 
 // Get TS involved in the process of insertMany promotions
 // To insertMany promotions call the Promotion.massInsert() function

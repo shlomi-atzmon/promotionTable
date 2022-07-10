@@ -1,74 +1,72 @@
 import { Request, Response } from 'express';
-import { Promotion } from '../models/Promotion';
+import { BadRequestError } from '../errors/bad-request-error';
 import PromotionAttrs from '../types/promotion-attrs';
-import { PromotionType } from '../Enums/promotion-type';
+import { Promotion } from '../models/Promotion';
+import { generatePromotions } from '../utils/mock-generator';
 
 // Get all promotions
 const getPromotions = async (req: Request, res: Response) => {
   res.send(res.paginatedResults);
 };
 
-// Add 10,000 rows of data
-const addMockData = async (req: Request, res: Response) => {
-  const response = await Promotion.massInsert(await createPromotions());
-  return res.status(201).send({ results: response });
+// Generate 10,000 rows of data
+const addMockPromotions = async (req: Request, res: Response) => {
+  const response = await Promotion.massInsert(await generatePromotions());
+  return res.status(201).send();
 };
 
-const createPromotions = async () => {
-  const start_date = new Date();
-  const end_date = new Date(start_date.setMonth(start_date.getMonth() + 3));
-
-  // TODO: consider a get req for paginated results and than push
-  const totalDocuments = await Promotion.countDocuments().exec();
-
-  // TODO: Add random PromotionType
-  // TODO: Switch to i < 10000
-  const promotions: PromotionAttrs[] = [];
-  for (let i = totalDocuments; i < totalDocuments + 5; i++) {
-    promotions.push({
-      name: `New promotion ${i + 1}`,
-      type: PromotionType.Epic,
-      start_date,
-      end_date,
-      user_group: `group ${i + 1}`,
-    });
-  }
-
-  return promotions;
-};
-
-// Edit by ID
+// Update
 const updatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
-  // TODO: How to handle next error from controller
   if (!promotion) {
-    // throw new NotFoundError('promotion');
+    throw new BadRequestError('Invalid request');
   }
 
-  const { name } = req.body;
+  const updatePromotion: PromotionAttrs = req.body;
 
-  /* promotion.set({ name });
-  await promotion.save(); */
+  promotion.set(updatePromotion);
+  await promotion.save();
 
-  res.send({ promotion });
+  res.send(promotion);
 };
 
-// Delete by ID
+// Delete
 const deletePromotionByID = async (req: Request, res: Response) => {
-  await Promotion.deleteOne({ _id: req.params.id });
+  const result = await Promotion.deleteOne({ _id: req.params.id });
+
+  if (!result.deletedCount) {
+    throw new BadRequestError('Invalid request');
+  }
+
   return res.status(204).send();
 };
 
 // Duplicate
-export const duplicatePromotion = async (req: Request, res: Response) => {
-  return res.status(200).send();
+const duplicatePromotionByID = async (req: Request, res: Response) => {
+  const promotion = await Promotion.findById(req.params.id);
+
+  if (!promotion) {
+    throw new BadRequestError('Invalid request');
+  }
+
+  const newPromotion = Promotion.build({
+    name: promotion.name,
+    type: promotion.type,
+    start_date: promotion.start_date,
+    end_date: promotion.end_date,
+    user_group: promotion.user_group,
+  });
+
+  await newPromotion.save();
+
+  return res.status(200).send(newPromotion);
 };
 
 export default {
   getPromotions,
-  addMockData,
+  addMockPromotions,
   updatePromotionByID,
   deletePromotionByID,
-  duplicatePromotion,
+  duplicatePromotionByID,
 };
