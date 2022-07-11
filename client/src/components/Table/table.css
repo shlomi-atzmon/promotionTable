@@ -1,0 +1,23 @@
+.t-section {
+  @apply table w-full;
+}
+
+.t-section > * {
+  @apply table-row;
+}
+
+.t-header {
+  @apply sticky top-0 z-50 bg-gray-50 border-b-2 border-gray-200;
+}
+
+.th-col {
+  @apply table-cell w-1/6 p-3 text-sm font-semibold tracking-wide text-left;
+}
+
+.t-row {
+  @apply bg-gray-50;
+}
+
+.t-col {
+  @apply table-cell w-1/5 p-3 text-sm text-gray-700;
+}

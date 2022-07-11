@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "react-query";
 import moonactive from "../../api/moonactive";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import './table.css';
 
 interface tableProps {
   model: string,
@@ -26,6 +27,7 @@ const TableContainer = ({ model, path }: tableProps) => {
       method: 'POST',
     });
   }, {
+    // TODO : Add err type 
     onError: (error: any) => {
       toast.error((
         <div>{
@@ -48,10 +50,10 @@ const TableContainer = ({ model, path }: tableProps) => {
         <div className='font-semibold text-xl tracking-tight py-3 text-white'>{model} Information</div>
         <button className='mock-btn' onClick={() => addMockData()}>Add Mock {model}s</button>
       </div>
-      <table className="w-full">
+      <div className="t-section">
         <TableHeader />
         <TableBody path={path} />
-      </table>
+      </div>
     </>
   )
 }

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import PaginatedResults from '../types/paginated-results';
+import { Model } from 'mongoose';
 
 // Augment express Response object
 declare global {
@@ -10,14 +11,14 @@ declare global {
   }
 }
 
-type QueryString = { cursor: string };
+type QueryString = { page: string; limit: string };
 
-// TODO: replace type any maybe to mongoose model
-export const paginate = (model: any) => {
+export const paginate = (model: Model<any>) => {
   return async (req: Request, res: Response, next: NextFunction) => {
-    let { cursor } = req.query as QueryString;
+    let { page: cursor, limit: size } = req.query as QueryString;
+
     const page = parseInt(cursor) || 1;
-    const limit = 20;
+    const limit = parseInt(size) || 30;
 
     const startIndex = (page - 1) * limit;
     const endIndex = page * limit;

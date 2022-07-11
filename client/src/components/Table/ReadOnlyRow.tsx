@@ -1,3 +1,4 @@
+import { Dispatch, SetStateAction, CSSProperties } from 'react';
 import Dropdown from './TableDropdownActions';
 import { Promotion } from '../../types/promotion';
 
@@ -5,22 +6,22 @@ interface Props {
   index: number,
   path: string,
   item: Promotion,
-  refProp: {} | React.Attributes,
-  setEdit: React.Dispatch<React.SetStateAction<string | null>>
+  style: CSSProperties,
+  setEdit: Dispatch<SetStateAction<string | null>>,
 }
 
-const ReadOnlyRow = ({ index, path, item, refProp, setEdit }: Props) => {
+const ReadOnlyRow = ({ index, path, item, style, setEdit }: Props) => {
   return ((
-    <tr key={item.id} {...refProp} className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-      <td className='p-3 text-sm text-gray-700'>{item.name}</td>
-      <td className='p-3 text-sm text-gray-700'>{item.type}</td>
-      <td className='p-3 text-sm text-gray-700'>{item.start_date}</td>
-      <td className='p-3 text-sm text-gray-700'>{item.end_date}</td>
-      <td className='p-3 text-sm text-gray-700'>{item.user_group}</td>
-      <td className='p-3 text-sm text-gray-700'>
+    <div key={item.id} style={style} className="t-row">
+      <div className='t-col'>{item.name}</div>
+      <div className='t-col'>{item.type}</div>
+      <div className='t-col'>{item.start_date}</div>
+      <div className='t-col'>{item.end_date}</div>
+      <div className='t-col'>{item.user_group}</div>
+      <div className='t-col'>
         <Dropdown id={item.id} path={path} setEdit={setEdit} />
-      </td>
-    </tr>
+      </div>
+    </div>
   ))
 }
 
