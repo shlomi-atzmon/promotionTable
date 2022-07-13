@@ -1,0 +1,23 @@
+.t-section {
+  @apply inline-block w-full;
+}
+
+.t-section > * {
+  @apply block;
+}
+
+.t-header {
+  @apply sticky top-0 z-50 bg-gray-50 border-b-2 border-gray-200;
+}
+
+.th-col {
+  @apply inline-block w-1/6 p-3 text-sm font-semibold tracking-wide text-left;
+}
+
+.t-col {
+  @apply inline-block w-1/6 p-3 text-sm text-gray-700;
+}
+
+.t-body {
+  @apply h-[65vh] overflow-y-scroll bg-white;
+}
