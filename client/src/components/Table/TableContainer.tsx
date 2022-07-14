@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import TableHeader from './TableHeader';
 import TableBody from './TableBody';
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation } from "react-query";
 import moonactive from "../../api/moonactive";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -13,7 +14,7 @@ interface tableProps {
 
 const TableContainer = ({ model, path }: tableProps) => {
 
-  const queryClient = useQueryClient();
+  const [refreshTableKey, setRefreshTableKey] = useState<number>(0);
 
   const { mutate: addMockData } = useMutation(async () => {
     toast.info("Cooking your data...", {
@@ -27,7 +28,6 @@ const TableContainer = ({ model, path }: tableProps) => {
       method: 'POST',
     });
   }, {
-    // TODO : Add err type 
     onError: (error: any) => {
       toast.error((
         <div>{
@@ -39,9 +39,7 @@ const TableContainer = ({ model, path }: tableProps) => {
         position: toast.POSITION.TOP_LEFT
       });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries('promotion');
-    }
+    onSuccess: () => setRefreshTableKey(prev => prev + 1)
   });
 
   return (
@@ -52,7 +50,7 @@ const TableContainer = ({ model, path }: tableProps) => {
       </div>
       <div className="t-section">
         <TableHeader />
-        <TableBody path={path} />
+        <TableBody path={path} key={refreshTableKey} />
       </div>
     </>
   )

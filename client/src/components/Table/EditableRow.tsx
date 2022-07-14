@@ -1,22 +1,21 @@
 import { useState } from 'react';
+import { useMutation } from 'react-query';
 import { SaveIcon, XIcon } from '@heroicons/react/solid';
 import { PromotionTypes } from '../../types/promotion';
 import { Promotion } from '../../types/promotion';
-import { useMutation, useQueryClient } from 'react-query';
 import moonactive from '../../api/moonactive';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 interface Props {
   index: number,
   path: string,
   item: Promotion,
   setEdit: React.Dispatch<React.SetStateAction<string | null>>
+  handleUpdate: (index: number, item: Promotion) => void
 }
 
-const EditableRow = ({ index, path, item, setEdit }: Props) => {
+const EditableRow = ({ index, path, item, setEdit, handleUpdate }: Props) => {
   const [itemData, setItemData] = useState({ ...item });
-  const queryClient = useQueryClient();
 
   const handleItemData = (element: EventTarget & HTMLInputElement | HTMLSelectElement) => {
     setItemData({ ...itemData, [element.name]: element.value });
@@ -29,7 +28,6 @@ const EditableRow = ({ index, path, item, setEdit }: Props) => {
       method: 'PUT',
     });
   }, {
-    // TODO : Add err type
     onError: (error: any) => {
       toast.error((
         <div>{
@@ -41,13 +39,13 @@ const EditableRow = ({ index, path, item, setEdit }: Props) => {
         position: toast.POSITION.TOP_LEFT
       });
     },
-    onSuccess: () => {
+    onSuccess: ({ data }) => {
       setEdit(null);
+      handleUpdate(index, data);
       toast.success('Update successfully', {
         position: toast.POSITION.TOP_LEFT,
         autoClose: 1200
       });
-      queryClient.invalidateQueries('promotion');
     }
   })
 

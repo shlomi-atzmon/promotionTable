@@ -1,20 +1,21 @@
 import { Fragment, Dispatch, SetStateAction } from 'react';
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation } from "react-query";
 import { Menu, Transition } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/solid';
 import moonactive from "../../api/moonactive";
 
 interface Props {
   id: string,
+  index: number,
   path: string,
-  setEdit: Dispatch<SetStateAction<string | null>>
+  setEdit: Dispatch<SetStateAction<string | null>>,
+  handleDelete: (index: number) => void,
+  handleDuplicate: (index: number, duplicatedRowId: string) => void
 }
 
 const classNames = (...classes: string[]): string => classes.filter(Boolean).join(' ');
 
-const TableDropdownActions = ({ id, path, setEdit }: Props) => {
-
-  const queryClient = useQueryClient();
+const TableDropdownActions = ({ id, index, path, setEdit, handleDelete, handleDuplicate }: Props) => {
 
   const { mutate: duplicate } = useMutation(async (id: string) => {
     return await moonactive.request({
@@ -22,8 +23,15 @@ const TableDropdownActions = ({ id, path, setEdit }: Props) => {
       method: 'POST',
     });
   }, {
-    onSuccess: () => queryClient.invalidateQueries('promotion')
+    onSuccess: ({ data }) => handleDuplicate(index, data.id)
+
   })
+
+  const promptUser = () => {
+    if (window.confirm('Are you sure you want to delete this promotion from the database?')) {
+      remove(id);
+    }
+  }
 
   const { mutate: remove } = useMutation(async (id: string) => {
     return await moonactive.request({
@@ -31,7 +39,7 @@ const TableDropdownActions = ({ id, path, setEdit }: Props) => {
       method: 'DELETE',
     });
   }, {
-    onSuccess: () => queryClient.invalidateQueries('promotion')
+    onSuccess: () => handleDelete(index)
   })
 
   return (
@@ -83,7 +91,7 @@ const TableDropdownActions = ({ id, path, setEdit }: Props) => {
             <Menu.Item as="div">
               {({ active }) => (
                 <div
-                  onClick={() => remove(id)}
+                  onClick={() => promptUser()}
                   className={classNames(
                     active ? 'bg-gray-100 text-gray-900' : 'text-gray-700',
                     'block px-4 py-2 text-sm cursor-pointer'

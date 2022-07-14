@@ -1,9 +1,8 @@
-import { useState, useCallback, useRef, Fragment } from 'react';
-import { useQuery } from 'react-query';
-import ReadOnlyRow from './ReadOnlyRow';
-import EditableRow from './EditableRow';
+import { useState, useCallback, useRef, Fragment, useEffect } from 'react';
 import { Promotion } from '../../types/promotion';
 import moonactive from "../../api/moonactive";
+import ReadOnlyRow from './ReadOnlyRow';
+import EditableRow from './EditableRow';
 
 interface Props {
   path: string,
@@ -11,90 +10,100 @@ interface Props {
 
 const itemsPerPage = 20;
 const maxItemsOnScreen = 100;
+const maxPagesOnScreen = maxItemsOnScreen / itemsPerPage;
 
 const TableBody = ({ path }: Props) => {
+  // row read/edit state
   const [editRowId, setEditRowId] = useState<string | null>(null);
+  // direction state
   const [direction, setDirection] = useState<"down" | "up">("down");
+  // page to fetch form server
   const [page, setPage] = useState<number>(1);
-  const [rows, setRows] = useState([])
-
-  //const [lastPage, setLastPage] = useState<number>(1);
-
+  // rows to render
+  const [rows, setRows] = useState<Promotion[]>([]);
+  // loading page from server
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // runs after CRUD operations for render use only - rows !== primitive type
+  const [render, setRender] = useState<number>(0);
+  // paging helpers
+  const totalPages = useRef<number>(1);
   const lastPage = useRef<number>(1);
+  const firstPage = (lastPage.current > maxPagesOnScreen)
+    ? lastPage.current - maxPagesOnScreen
+    : 1;
 
+  ////// CRUD section //////
+  const handleDelete = (index: number) => {
+    const tempRows: Promotion[] = rows;
+    tempRows.splice(index, 1);
+    setRows(tempRows);
+    setRender(prev => prev + 1);
+  }
 
+  const handleDuplicate = (index: number, duplicatedRowId: string) => {
+    const tempRows: Promotion[] = rows;
+    tempRows.splice(index, 0, { ...tempRows[index], id: duplicatedRowId });
+    setRows(tempRows);
+    setRender(prev => prev + 1)
+  }
 
-  const firstPage = (lastPage.current >= 5) ? lastPage.current - 5 : 1
-  console.log('==> firstPage : ' + firstPage);
-  console.log("==> lastPage : " + lastPage.current);
+  const handleUpdate = (index: number, item: Promotion) => {
+    const tempRows: Promotion[] = rows;
+    tempRows[index] = item;
+    setRows(tempRows);
+    setRender(prev => prev + 1)
+  }
 
-  /// Fetch Data Section /// 
-  const dataHandler = (data: any) => {
-
-    // data.results => old data
-    // response.data.results => new data
-
-    //console.log(direction)
-
+  ////// Fetch Data Section /////// 
+  const dataHandler = useCallback((data: any) => {
     let newData = data.results;
+    totalPages.current = data.pages
 
+    // Removing rows from the end of the array
     if (direction === "down") {
-
       newData = [...rows, ...data.results];
-      console.log("D: Adding page: " + page);
-
-      if (lastPage.current > maxItemsOnScreen / itemsPerPage) { //(data.results.length >= maxItemsOnScreen) {
-        newData = newData.filter((item: any, index: number) => index > (itemsPerPage - 1));
-        //console.log(newData);
-
-        console.log("D: Removing page: " + firstPage);
-
+      if (lastPage.current > maxPagesOnScreen) {
+        newData = newData.filter((item: Promotion, index: number) => index > (itemsPerPage - 1));
       }
     }
 
-
-    console.log("==== This stinks: ====")
-    console.log("Direction: " + direction)
-    console.log("firstPage: " + firstPage)
+    // Removing rows from the start of the array
     if (direction === 'up') {
-
-      console.log("U: Adding page: " + firstPage);
       newData = [...data.results, ...rows];
-
-      console.log("U: Removing page: " + (lastPage.current));
-      newData = newData.filter((item: any, index: number) => index < maxItemsOnScreen);
+      newData = newData.filter((item: Promotion, index: number) => index < maxItemsOnScreen);
     }
 
-
     setRows(newData);
-  }
 
-  const fetchData = async (page: number) => {
+  }, [direction, rows]);
+
+  const fetchData = useCallback(async (page: number) => {
+    setIsLoading(true);
+
     const response = await moonactive.request({
       url: path,
       method: 'GET',
       params: { page, limit: itemsPerPage }
     });
+
+    setIsLoading(false);
     return response.data;
-  }
+  }, [path]);
 
-  const {
-    isLoading,
-    isError,
-    data,
-  } = useQuery(['promotion', page], () => fetchData(page), {
-    keepPreviousData: true,
-    refetchOnWindowFocus: false,
-    onSuccess: (data) => dataHandler(data)
-  });
-  /// End Fetch Data Section /// 
 
-  /// Intersection Observer Section ///
+  useEffect(() => {
+    const handleRenderedRows = async () => {
+      const data = await fetchData(page);
+      dataHandler(data);
+    }
+    if (page && !isLoading) handleRenderedRows();
+  }, [page]);
+
+  ////// Intersection Observer Section ///// 
   const observe = {
     first: useRef<IntersectionObserver>(),
     last: useRef<IntersectionObserver>()
   };
-
 
   const firstItemRef = useCallback((node: HTMLTableRowElement) => {
     if (isLoading) return;
@@ -102,13 +111,11 @@ const TableBody = ({ path }: Props) => {
 
     observe.first.current = new IntersectionObserver(entries => {
 
-      if (entries[0].isIntersecting && data.previousPage) {
-
+      if (entries[0].isIntersecting) {
         setDirection("up");
 
-        if (lastPage.current > 5) {
-          console.log("Up observer - last page: " + lastPage.current)
-          setPage(firstPage)
+        if (lastPage.current > maxPagesOnScreen) {
+          setPage(firstPage);
           lastPage.current = lastPage.current - 1
         }
 
@@ -119,19 +126,20 @@ const TableBody = ({ path }: Props) => {
     });
 
     if (node) observe.first.current.observe(node)
-  }, [isLoading, data?.previousPage, observe.first, firstPage]);
+  }, [isLoading, observe.first, firstPage]);
 
   const lastItemRef = useCallback((node: HTMLDivElement) => {
     if (isLoading) return;
     if (observe.last.current) observe.last.current.disconnect();
 
     observe.last.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && data.nextPage) {
+      if (entries[0].isIntersecting) {
         setDirection("down");
 
-        setPage(lastPage.current + 1);
-        lastPage.current = lastPage.current + 1
-
+        if (lastPage.current < totalPages.current) {
+          setPage(lastPage.current + 1);
+          lastPage.current = lastPage.current + 1
+        }
 
       }
     }, {
@@ -140,10 +148,9 @@ const TableBody = ({ path }: Props) => {
     });
 
     if (node) observe.last.current.observe(node)
-  }, [isLoading, data?.nextPage, observe.last]);
-  /// End Intersection Observer Section ///
+  }, [isLoading, observe.last]);
 
-  /// Render Section 
+  ////// Render Section ///////  
   const serializeRows = () => {
     return rows.map((item: Promotion, i: number) => {
 
@@ -162,6 +169,7 @@ const TableBody = ({ path }: Props) => {
               path={path}
               item={item}
               setEdit={setEditRowId}
+              handleUpdate={handleUpdate}
             />
             : <ReadOnlyRow
               index={i}
@@ -169,6 +177,8 @@ const TableBody = ({ path }: Props) => {
               item={item}
               setEdit={setEditRowId}
               refProp={refProp}
+              handleDelete={handleDelete}
+              handleDuplicate={handleDuplicate}
             />
           }
         </Fragment>
@@ -177,20 +187,9 @@ const TableBody = ({ path }: Props) => {
   }
 
   return (
-    <>
-      {isLoading ? (
-        <div className='t-row'>
-          <div className='t-col'>Loading...</div>
-        </div>
-      ) : isError ? (
-        <div className='t-row'>
-          <div className='t-col'>Error...</div>
-        </div>
-      ) : <div className='t-body'>
-        {serializeRows()}
-      </div>
-      }
-    </>
+    <div className='t-body'>
+      {serializeRows()}
+    </div>
   )
 }
 

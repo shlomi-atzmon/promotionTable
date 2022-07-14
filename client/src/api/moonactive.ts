@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// TODO: add https for production
 const baseURL =
   process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : '';
 

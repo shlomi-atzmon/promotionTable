@@ -8,9 +8,8 @@ export const generatePromotions = async () => {
 
   const totalDocuments = await Promotion.countDocuments().exec();
 
-  // TODO: Switch to i < 10000
   const promotions: PromotionAttrs[] = [];
-  for (let i = totalDocuments; i < totalDocuments + 1200; i++) {
+  for (let i = totalDocuments; i < totalDocuments + 10000; i++) {
     const keys = Object.keys(PromotionType);
     promotions.push({
       name: `New promotion ${i + 1}`,
