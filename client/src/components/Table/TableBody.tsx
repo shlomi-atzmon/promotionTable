@@ -33,25 +33,22 @@ const TableBody = ({ path }: Props) => {
     : 1;
 
   ////// CRUD section //////
-  const handleDelete = (index: number) => {
-    const tempRows: Promotion[] = rows;
-    tempRows.splice(index, 1);
-    setRows(tempRows);
-    setRender(prev => prev + 1);
+  const handleDelete = () => {
+    getAllPages();
   }
 
   const handleDuplicate = (index: number, duplicatedRowId: string) => {
     const tempRows: Promotion[] = rows;
     tempRows.splice(index, 0, { ...tempRows[index], id: duplicatedRowId });
     setRows(tempRows);
-    setRender(prev => prev + 1)
+    setRender(prev => prev + 1);
   }
 
   const handleUpdate = (index: number, item: Promotion) => {
     const tempRows: Promotion[] = rows;
     tempRows[index] = item;
     setRows(tempRows);
-    setRender(prev => prev + 1)
+    setRender(prev => prev + 1);
   }
 
   ////// Fetch Data Section /////// 
@@ -90,6 +87,18 @@ const TableBody = ({ path }: Props) => {
     return response.data;
   }, [path]);
 
+
+  // Update on screen pages form server
+  const getAllPages = async () => {
+    let data;
+    let newData: Promotion[] = [];
+    const startPage = lastPage.current <= maxPagesOnScreen ? 1 : firstPage + 1;
+    for (let pageCounter = startPage; pageCounter <= lastPage.current; pageCounter++) {
+      data = await fetchData(pageCounter);
+      newData = [...newData, ...data.results];
+    }
+    setRows(newData)
+  }
 
   useEffect(() => {
     const handleRenderedRows = async () => {

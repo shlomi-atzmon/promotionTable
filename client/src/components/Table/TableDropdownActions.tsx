@@ -9,7 +9,7 @@ interface Props {
   index: number,
   path: string,
   setEdit: Dispatch<SetStateAction<string | null>>,
-  handleDelete: (index: number) => void,
+  handleDelete: () => void,
   handleDuplicate: (index: number, duplicatedRowId: string) => void
 }
 
@@ -39,7 +39,7 @@ const TableDropdownActions = ({ id, index, path, setEdit, handleDelete, handleDu
       method: 'DELETE',
     });
   }, {
-    onSuccess: () => handleDelete(index)
+    onSuccess: () => handleDelete()
   })
 
   return (

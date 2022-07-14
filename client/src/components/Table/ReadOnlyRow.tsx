@@ -8,7 +8,7 @@ interface Props {
   item: Promotion,
   setEdit: Dispatch<SetStateAction<string | null>>,
   refProp: {} | React.Attributes,
-  handleDelete: (index: number) => void,
+  handleDelete: () => void,
   handleDuplicate: (index: number, duplicatedRowId: string) => void
 }
 
