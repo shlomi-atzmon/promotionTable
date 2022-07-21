@@ -1,13 +1,8 @@
-import axios from 'axios';
+import axios from "axios";
 
 const baseURL =
-  process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : '';
+  process.env.NODE_ENV === "development" ? "http://localhost:5000" : "";
 
 export default axios.create({
   baseURL,
-  headers: {
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Methods': 'GET,PUT,POST,DELETE,OPTIONS',
-  },
 });
