@@ -1,8 +1,8 @@
-import { Request, Response } from 'express';
-import { BadRequestError } from '../errors/bad-request-error';
-import PromotionAttrs from '../types/promotion-attrs';
-import { Promotion } from '../models/Promotion';
-import { generatePromotions } from '../utils/mock-generator';
+import { Request, Response } from "express";
+import { BadRequestError } from "../errors/bad-request-error";
+import PromotionAttrs from "../types/promotion-attrs";
+import { Promotion } from "../models/Promotion";
+import { generatePromotions } from "../utils/mock-generator";
 
 // Get all promotions
 const getPromotions = async (req: Request, res: Response) => {
@@ -20,7 +20,7 @@ const updatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
   if (!promotion) {
-    throw new BadRequestError('Invalid request');
+    throw new BadRequestError("Invalid request");
   }
 
   const updatePromotion: PromotionAttrs = req.body;
@@ -36,7 +36,7 @@ const deletePromotionByID = async (req: Request, res: Response) => {
   const result = await Promotion.deleteOne({ _id: req.params.id });
 
   if (!result.deletedCount) {
-    throw new BadRequestError('Invalid request');
+    throw new BadRequestError("Invalid request");
   }
 
   return res.status(204).send();
@@ -47,7 +47,7 @@ const duplicatePromotionByID = async (req: Request, res: Response) => {
   const promotion = await Promotion.findById(req.params.id);
 
   if (!promotion) {
-    throw new BadRequestError('Invalid request');
+    throw new BadRequestError("Invalid request");
   }
 
   const newPromotion = Promotion.build({

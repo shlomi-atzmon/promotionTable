@@ -1,4 +1,4 @@
-import express, { Request, Response } from "express";
+import express from "express";
 
 // Augment the default behaviour of error handling in async function
 import "express-async-errors";
@@ -25,7 +25,7 @@ app.use(express.json());
 // Route Handlers
 app.use(promotionRouter);
 
-app.all("*", async (req: Request, res: Response) => {
+app.all("*", async () => {
   throw new NotFoundError("Route");
 });
 
