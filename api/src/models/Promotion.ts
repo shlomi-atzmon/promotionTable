@@ -1,5 +1,5 @@
-import { Schema, model, Document, Model } from 'mongoose';
-import PromotionAttrs from '../types/promotion-attrs';
+import { Schema, model, Document, Model } from "mongoose";
+import PromotionAttrs from "../types/promotion-attrs";
 
 // Describes the properties that a Promotion Model has
 interface PromotionModel extends Model<PromotionDoc> {
@@ -25,7 +25,7 @@ const promotionSchema = new Schema(
     user_group: { type: String, required: true },
   },
   {
-    timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+    timestamps: { createdAt: "created_at", updatedAt: "updated_at" },
     toJSON: {
       transform(doc, ret) {
         ret.id = ret._id;
@@ -51,7 +51,7 @@ promotionSchema.statics.massInsert = (attrs: PromotionAttrs[]) => {
 };
 
 const Promotion = model<PromotionDoc, PromotionModel>(
-  'Promotion',
+  "Promotion",
   promotionSchema
 );
 

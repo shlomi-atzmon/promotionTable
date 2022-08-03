@@ -1,0 +1,15 @@
+header {
+  padding: 2rem 2rem;
+}
+
+.wrraper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.appLogo {
+  width: 150px;
+  height: auto;
+}
